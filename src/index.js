@@ -33,8 +33,11 @@ geocoder.on('markgeocode', e => {
   console.log(e, e.geocode.center);
   // const waypoint = leaflet.latLng(e.geocode.center.lat, e.geocode.center.lng);
   // router.options.waypoints.push(waypoint);
-  console.log(leaflet.marker([e.geocode.center.lat, e.geocode.center.lng]));
-  leaflet.marker([e.geocode.center.lat, e.geocode.center.lng]).addTo(map);
+  const marker = leaflet.marker([e.geocode.center.lat, e.geocode.center.lng]);
+  console.log(marker);
+
+  marker.bindPopup(e.geocode.name);
+  marker.addTo(map);
   // console.log(e);
   // console.log(addresses);
   const bbox = e.geocode.bbox;
@@ -47,6 +50,62 @@ geocoder.on('markgeocode', e => {
   map.fitBounds(poly.getBounds());
 });
 
+const createOrsRequest = () => {
+  const [firstPoint] = addresses;
+
+  const requestContent = {
+    jobs: [],
+    vehicles: [{
+      id: 1,
+      profile: 'driving-car',
+      start: [firstPoint.lng, firstPoint.lat],
+      end: [firstPoint.lng, firstPoint.lat]
+    }],
+    options: {
+      g: false
+    }
+  };
+  addresses.forEach((addr, i) => {
+    requestContent.jobs.push({
+      id: i + 1,
+      location: [addr.lng, addr.lat]
+    });
+  });
+
+  const myHeaders = new Headers();
+  myHeaders.append('Authorization', '5b3ce3597851110001cf62487055caf6d3ff4a81af41b51b5fbbf037');
+  myHeaders.append('Content-Type', 'application/json');
+
+  const requestOptions = {
+    method: 'POST',
+    headers: myHeaders,
+    body: JSON.stringify(requestContent),
+    redirect: 'follow'
+  };
+
+  fetch('https://api.openrouteservice.org/optimization', requestOptions)
+    .then(response => response.text())
+    .then(result => console.log(result))
+    .catch(error => console.log('error', error));
+};
+
 geocoder.addTo(map);
+
+leaflet.Control.Watermark = leaflet.Control.extend({
+  onAdd: function (map) {
+    const img = leaflet.DomUtil.create('img');
+    img.src = './images/cambalache.png';
+    img.title = 'Armar ruta!';
+    img.onclick = () => createOrsRequest();
+    return img;
+  }
+
+});
+
+leaflet.control.watermark = opts => new leaflet.Control.Watermark(opts);
+const routeButton = leaflet.control.watermark({ position: 'topright' });
+routeButton.addTo(map);
+
+// routeButton.onclick = () => console.log(addresses);
 
 // console.log(router);
