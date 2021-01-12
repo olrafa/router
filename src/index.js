@@ -16,14 +16,6 @@ leaflet.tileLayer(osmMapnik, {
   attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 }).addTo(map);
 
-// const router = leaflet.Routing.control({
-//   waypoints: [
-//     leaflet.latLng(-34.75998928571429, -58.39461882653061),
-//     leaflet.latLng(-34.6013566, -58.370832375605474)
-//   ]
-// });
-// router.addTo(map);
-
 const geocoder = leaflet.Control.geocoder({ defaultMarkGeocode: false });
 
 const addresses = [];
@@ -62,7 +54,7 @@ const createOrsRequest = () => {
       end: [firstPoint.lng, firstPoint.lat]
     }],
     options: {
-      g: false
+      g: true
     }
   };
   addresses.forEach((addr, i) => {
@@ -73,7 +65,8 @@ const createOrsRequest = () => {
   });
 
   const myHeaders = new Headers();
-  myHeaders.append('Authorization', '5b3ce3597851110001cf62487055caf6d3ff4a81af41b51b5fbbf037');
+  // eslint-disable-next-line no-undef
+  myHeaders.append('Authorization', config.orsKey);
   myHeaders.append('Content-Type', 'application/json');
 
   const requestOptions = {
@@ -84,8 +77,8 @@ const createOrsRequest = () => {
   };
 
   fetch('https://api.openrouteservice.org/optimization', requestOptions)
-    .then(response => response.text())
-    .then(result => console.log(result))
+    .then(response => response.json())
+    .then(result => showRoute(result))
     .catch(error => console.log('error', error));
 };
 
@@ -99,13 +92,19 @@ leaflet.Control.Watermark = leaflet.Control.extend({
     img.onclick = () => createOrsRequest();
     return img;
   }
-
 });
 
 leaflet.control.watermark = opts => new leaflet.Control.Watermark(opts);
 const routeButton = leaflet.control.watermark({ position: 'topright' });
 routeButton.addTo(map);
 
-// routeButton.onclick = () => console.log(addresses);
+const showRoute = (points) => {
+  console.log(points);
+  const steps = points.routes[0].steps;
+  const waypoints = steps.map(step => leaflet.latLng(step.location[1], step.location[0]));
+
+  const router = leaflet.Routing.control({ waypoints });
+  router.addTo(map);
+};
 
 // console.log(router);
