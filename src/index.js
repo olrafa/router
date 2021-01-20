@@ -20,6 +20,12 @@ const geocoder = leaflet.Control.geocoder({ defaultMarkGeocode: false });
 
 const addresses = [];
 
+map.on('click', e => {
+  console.log(e);
+  addresses.push(e.latlng);
+  leaflet.marker([e.latlng.lat, e.latlng.lng]).addTo(map);
+});
+
 geocoder.on('markgeocode', e => {
   addresses.push(e.geocode.center);
   console.log(e, e.geocode.center);
